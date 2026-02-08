@@ -1,0 +1,56 @@
+name: Compile PDF
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+
+      - name: checkout font repository
+        uses: actions/checkout@v6
+        with:
+          repository: cau-task/font
+          path: font-tmp
+          lfs: true
+      
+      - name: Install Fonts from Repo
+        run: |
+          ls font-tmp
+          mkdir -p ~/.local/share/fonts
+          cp -r font-tmp/* ~/.local/share/fonts/
+          rm -rf font-tmp
+          fc-cache -f -v
+      
+      - name: Setup Typst
+        uses: typst-community/setup-typst@v4
+        with:
+          typst-version: latest
+      
+      - name: Compile Typst documents
+        run: |
+          find . -name "*.typ" -not -path "./.git/*" | while read file; do
+            echo "Compiling $file"
+            typst compile "$file"
+          done
+
+      - name: Upload PDF artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: compiled-pdfs
+          path: "**/*.pdf"
+          retention-days: 7
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Compiled PDFs
+          tag_name: pdf-release
+          files: "**/*.pdf"
+          make_latest: true
