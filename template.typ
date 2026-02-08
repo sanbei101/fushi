@@ -13,6 +13,77 @@
     (#h(1.5em))
   ]
 }
+#let choices(a: str, b: str, c: str, d: str) = layout(bounds => {
+  context {
+    let raw-opts = (a, b, c, d)
+    let labeled-opts = raw-opts
+      .enumerate()
+      .map(e => {
+        let (i, content) = e
+        let label = str.from-unicode(65 + i) + ". "
+        label + content
+      })
+
+    let col-gap = 2em
+    let row-gap = 0.8em
+
+    let gap-width = measure(h(col-gap)).width
+    let widths = labeled-opts.map(opt => measure(opt).width)
+
+    let max-width = widths.fold(0pt, calc.max)
+
+    let fits-4-cols = max-width * 4 + gap-width * 3 < bounds.width
+
+    let fits-2-cols = max-width * 2 + gap-width < bounds.width
+
+    if fits-4-cols {
+      grid(
+        columns: (1fr, 1fr, 1fr, 1fr),
+        gutter: col-gap,
+        ..labeled-opts
+      )
+    } else if fits-2-cols {
+      grid(
+        columns: (1fr, 1fr),
+        gutter: row-gap,
+        column-gutter: col-gap,
+        ..labeled-opts
+      )
+    } else {
+      grid(
+        columns: 1,
+        gutter: row-gap,
+        ..labeled-opts
+      )
+    }
+  }
+})
+
+#let choice-question(
+  id,
+  stem,
+  a: str,
+  b: str,
+  c: str,
+  d: str,
+) = {
+  grid(
+    columns: (auto, 1fr),
+    column-gutter: 0.5em,
+    [#id.],
+    [
+      #stem
+      #v(0.2em)
+      #choices(
+        a: a,
+        b: b,
+        c: c,
+        d: d,
+      )
+    ],
+  )
+  v(1em)
+}
 #let paper(
   year: int,
   body,
